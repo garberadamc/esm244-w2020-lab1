@@ -1,0 +1,135 @@
+---
+title: "Lab 1 - Class Version"
+author: "Adam Garber"
+date: "1/9/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
+```
+
+```{r, include=FALSE}
+
+library(tidyverse)
+library(here)
+library(janitor)
+library(kableExtra)
+
+
+```
+
+### Read in noaa_fisheries.csv data
+
+```{r}
+
+fish_data <- read_csv(here("data", "noaa_fisheries.csv"))
+
+```
+
+### now make a tidy version of this
+
+```{r}
+
+tidy_fish <- fish_data %>% # and then 
+  janitor::clean_names() %>% # and then
+  mutate(state = str_to_lower(state),
+         afs_name = str_to_lower(afs_name)) %>% # and then 
+  mutate(dollars_num = parse_number(dollars_usd))
+
+```
+
+### lets just get some information for Salmon:
+
+```{r}
+
+salmon_landings <- tidy_fish %>%  # and then 
+  mutate(afs_clean = str_remove(afs_name, pattern = "aggregate")) %>% 
+  filter(str_detect(afs_clean, pattern = "salmon")) %>% 
+  separate(afs_clean, into = c("group", "species"), sep = ",")
+
+```
+
+### Find some grouped summary data: 
+
+Find annual total US landings and dollar value (summing across all states) for each type of salmon species
+
+```{r}
+
+salmon_summary <- salmon_landings %>% 
+  group_by(year, species) %>% 
+  summarise(
+    tot_landings = sum(landings_pounds), 
+       tot_value = sum(dollars_num)
+  )
+
+```
+
+
+```{r}
+
+salmon_landings_graph <- 
+  ggplot(data = salmon_summary,
+         aes(x = year, y = tot_landings)) +
+        geom_line(aes(color = species)) +
+  theme_minimal()
+                                
+salmon_landings_graph
+
+
+```
+
+Now we will export our graph with ggsave
+
+```{r}
+
+ggsave(plot = salmon_landings_graph,
+       here("figures", "us_salmon_ah.png"), 
+       height = 5, 
+       width = 8)
+
+```
+
+Make a nice kable table 
+
+```{r}
+
+salmon_first_5 <- salmon_summary %>% 
+  head(5) 
+
+```
+
+Use kable
+
+```{r}
+
+kable(salmon_first_5) %>% 
+  kable_styling(bootstrap_options = "striped",
+                full_width = FALSE)
+
+```
+
+```{r}
+
+
+
+```
+
+```{r}
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
